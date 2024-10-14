@@ -1,1 +1,227 @@
+--1. Turnover number
+select
+    COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) AS Attrition_Yes,
+    COUNT(CASE WHEN Attrition = 'No' THEN 1 END) AS Attrition_No,
+    COUNT(*) AS TotalEmployees
+from dHR_Analytics_Data
 
+--2. %Turnover rate
+select 
+    COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) AS Attrition_Yes,
+    COUNT(CASE WHEN Attrition = 'No' THEN 1 END) AS Attrition_No,
+    COUNT(*) AS TotalEmployees,
+    ROUND(COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) * 1.0/ COUNT(*), 2) AS TurnoverRate
+from dHR_Analytics_Data
+
+--3. count gender
+select gender,
+    COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) AS Attrition_Yes,
+    COUNT(CASE WHEN Attrition = 'No' THEN 1 END) AS Attrition_No,
+    COUNT(*) AS TotalEmployees,
+    ROUND(COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) * 1.0/ COUNT(*), 2) AS TurnoverRate
+from dHR_Analytics_Data
+group by gender
+
+--4.Headcount by branch
+select count(e.branch) as headcount_by_branch, e.Branch
+from Employee_data e INNER JOIN dHR_Analytics_Data d ON e.EmployeeNumber = d.EmployeeNumber
+where e.Date_of_leaving is NULL
+group by e.Branch
+
+--5. headcount by marrigae status
+SELECT maritalStatus,
+    COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) AS Attrition_Yes,
+    COUNT(CASE WHEN Attrition = 'No' THEN 1 END) AS Attrition_No,
+    COUNT(*) AS TotalEmployees,
+    ROUND(COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) * 1.0/ COUNT(*), 2) AS TurnoverRate
+FROM dHR_Analytics_Data
+group by maritalStatus
+
+--6. Average yearatthe company
+
+select avg(YearsAtCompany) as avg_year_at_the_company
+from dHR_Analytics_Data
+
+--7. Median age
+
+WITH Clean_Data AS (
+    SELECT *,
+        REPLACE(age, '"', '') AS age_clean
+    FROM 
+        dHR_Analytics_Data
+), ranked_ages AS (
+    SELECT 
+        CAST(age_clean AS INT) AS age_numeric,
+        ROW_NUMBER() OVER (ORDER BY CAST(age_clean AS INT)) AS row_num,
+        COUNT(*) OVER () AS total_rows
+    FROM Clean_Data
+)
+SELECT AVG(age_numeric) AS median_age
+FROM ranked_ages
+WHERE row_num IN (
+    (total_rows + 1) / 2,
+    (total_rows + 2) / 2 
+);
+
+--8. ATTRITION VS AGE
+
+WITH Clean_Data AS (
+    SELECT EmployeeNumber, Attrition, REPLACE(age, '"', '') AS age_clean
+    FROM 
+        dHR_Analytics_Data
+)
+SELECT 
+    CASE 
+        WHEN CAST(age_clean AS INT) BETWEEN 18 AND 25 THEN '18-25'
+        WHEN CAST(age_clean AS INT) BETWEEN 26 AND 35 THEN '26-35'
+        WHEN CAST(age_clean AS INT) BETWEEN 36 AND 45 THEN '36-45'
+        WHEN CAST(age_clean AS INT) BETWEEN 45 AND 55 THEN '46-55'
+        ELSE 'Above 56'
+    END AS Age_group,
+    COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) AS Attrition_Yes,
+    COUNT(CASE WHEN Attrition = 'No' THEN 1 END) AS Attrition_No,
+    COUNT(*) AS TotalEmployees,
+    ROUND(COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) * 1.0 / COUNT(*), 2) AS TurnoverRate
+FROM 
+    Clean_Data
+WHERE 
+    TRY_CAST(age_clean AS INT) IS NOT NULL
+GROUP BY 
+    CASE 
+        WHEN CAST(age_clean AS INT) BETWEEN 18 AND 25 THEN '18-25'
+        WHEN CAST(age_clean AS INT) BETWEEN 26 AND 35 THEN '26-35'
+        WHEN CAST(age_clean AS INT) BETWEEN 36 AND 45 THEN '36-45'
+        WHEN CAST(age_clean AS INT) BETWEEN 45 AND 55 THEN '46-55'
+        ELSE 'Above 56'
+    END;
+
+--9. Attrition vs Years at the company
+
+select case when YearsAtCompany < 5 then 'Below 5 years' 
+            when YearsAtCompany between 5 and 15 then '5-15 years'
+            ELSE 'Above 15 years'
+        END AS Years_group,
+    COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) AS Attrition_Yes,
+    COUNT(CASE WHEN Attrition = 'No' THEN 1 END) AS Attrition_No,
+    COUNT(*) AS TotalEmployees,
+    ROUND(COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) * 1.0/ COUNT(*), 2) AS TurnoverRate
+from dHR_Analytics_Data
+group by case when YearsAtCompany < 5 then 'Below 5 years'
+              when YearsAtCompany between 5 and 15 then '5-15 years'
+              ELSE 'Above 15 years'
+        END;
+
+--10. Attrition Job satisfaction rating
+SELECT Attrition, JobSatisfaction, COUNT(*) AS EmployeeCount, 
+ROUND(COUNT(*) * 1.0/ SUM(COUNT(*)) OVER (PARTITION BY Attrition), 2) AS Percentage
+FROM dHR_Analytics_Data
+GROUP BY Attrition, JobSatisfaction
+
+--11. Attrition vs Performance rating
+SELECT Attrition, PerformanceRating, COUNT(*) AS EmployeeCount, 
+ROUND(COUNT(*) * 1.0/ SUM(COUNT(*)) OVER (PARTITION BY Attrition), 2) AS Percentage
+FROM dHR_Analytics_Data
+GROUP BY Attrition, PerformanceRating
+
+--12. Attrition work-life balance rating
+SELECT Attrition, WorkLifeBalance, COUNT(*) AS EmployeeCount, 
+ROUND(COUNT(*) * 1.0/ SUM(COUNT(*)) OVER (PARTITION BY Attrition), 2) AS Percentage
+FROM dHR_Analytics_Data
+GROUP BY Attrition, WorkLifeBalance
+
+--13. Attrition vs Education
+SELECT Attrition, EducationField, COUNT(*) AS EmployeeCount, 
+ROUND(COUNT(*) * 1.0/ SUM(COUNT(*)) OVER (PARTITION BY Attrition), 2) AS Percentage
+FROM dHR_Analytics_Data
+GROUP BY Attrition, EducationField
+
+
+--14. Avg_PercentSalaryHike of each department
+
+SELECT 
+    Department,  -- Tên phòng ban
+    AVG(PercentSalaryHike) AS Avg_PercentSalaryHike
+FROM 
+    dHR_Analytics_Data
+GROUP BY 
+    Department
+ORDER BY 
+    Avg_PercentSalaryHike DESC;
+
+--15. Attrition vs Overtime
+
+select OverTime, COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) AS Attrition_Yes,
+    COUNT(CASE WHEN Attrition = 'No' THEN 1 END) AS Attrition_No,
+    COUNT(*) AS TotalEmployees,
+    ROUND(COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) * 1.0/ COUNT(*), 2) AS TurnoverRate
+from dHR_Analytics_Data
+group by OverTime
+
+--15. Attrition vs Business Travel
+
+select department, BusinessTravel, COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) AS Attrition_Yes,
+    COUNT(CASE WHEN Attrition = 'No' THEN 1 END) AS Attrition_No,
+    COUNT(*) AS TotalEmployees,
+    ROUND(COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) * 1.0/ COUNT(*), 2) AS TurnoverRate
+from dHR_Analytics_Data
+group by BusinessTravel, Department
+
+--16. Attrition vs Montly income following by department
+select department, avg(MonthlyIncome) as MonthlyIncome,
+COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) AS Attrition_Yes,
+    COUNT(CASE WHEN Attrition = 'No' THEN 1 END) AS Attrition_No,
+    COUNT(*) AS TotalEmployees,
+    ROUND(COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) * 1.0/ COUNT(*), 2) AS TurnoverRate
+from dHR_Analytics_Data
+group by Department
+
+--17. ATTRITION VS DEPARTMENT VS ROLE
+select Department,
+    COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END) AS Attrition_Yes,
+    COUNT(CASE WHEN Attrition = 'No' THEN 1 END) AS Attrition_No,
+    COUNT(*) AS TotalEmployees,
+    ROUND(COUNT(CASE WHEN Attrition = 'Yes' THEN 1 END)*1.0/ COUNT(*), 2) AS TurnoverRate
+from dHR_Analytics_Data 
+group by Department
+
+-- 18. AVERAGE MONTLY INCOME
+SELECT Attrition, AVG(MonthlyIncome) AS AvgMonthlyIncome, COUNT(*) AS TotalEmployees
+FROM dHR_Analytics_Data
+GROUP BY Attrition;
+
+--19. Cohort analytics for HR
+
+WITH Cohort_Data AS (
+    SELECT 
+        FORMAT(CAST(Date_of_join AS DATE), 'yyyy-MM') AS Month_Year,  -- Tháng gia nhập
+        COUNT(*) AS total_employees,  -- Tổng số nhân viên gia nhập trong tháng
+        SUM(CASE 
+            WHEN (Date_of_leaving IS NULL OR Date_of_leaving > GETDATE()) THEN 1 ELSE 0
+        END) AS current_employees,  -- Nhân viên còn làm việc
+        SUM(CASE 
+            WHEN (Date_of_leaving IS NOT NULL AND Date_of_leaving <= GETDATE()) THEN 1 ELSE 0
+        END) AS terminated_employees  -- Nhân viên đã nghỉ việc
+    FROM Employee_data
+    GROUP BY FORMAT(CAST(Date_of_join AS DATE), 'yyyy-MM')  -- Nhóm theo tháng gia nhập
+),
+Cohort_Analysis AS (
+    SELECT 
+        Month_Year,
+        total_employees,
+        current_employees,
+        terminated_employees,
+        -- Tính tỷ lệ giữ chân nhân viên (retention rate)
+        CASE 
+            WHEN total_employees > 0 THEN CAST(current_employees AS FLOAT) / total_employees * 100
+            ELSE 0
+        END AS retention_rate  -- Tỷ lệ giữ chân
+    FROM Cohort_Data
+)
+SELECT 
+    Month_Year, 
+    total_employees, 
+    current_employees, 
+    terminated_employees,
+    retention_rate
+FROM Cohort_Analysis
+ORDER BY Month_Year;
