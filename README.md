@@ -2,6 +2,13 @@
 
 This project provides insights and visualizations based on the HR dataset using SQL.
 
+![image](https://github.com/user-attachments/assets/11f8ceb8-6a8b-4e90-9fb8-b7551ede2099)
+
+![image](https://github.com/user-attachments/assets/bce078f9-c872-48e6-848d-538a38b3c9a3)
+
+![image](https://github.com/user-attachments/assets/fd603fff-663f-4bc3-a465-b9495a7767d1)
+
+
 ## **Dashboard Components**
 
 1. Overview: summary of key HR metrics: including total headcount, active headcount, attrition, attrition rate and more.
