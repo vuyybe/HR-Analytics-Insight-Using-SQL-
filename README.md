@@ -2,6 +2,8 @@
 
 This project provides insights and visualizations based on the HR dataset using SQL.
 
+https://app.powerbi.com/reportEmbed?reportId=542b69fb-5484-450e-ad78-99fe23319fa1&autoAuth=true&ctid=56f64fb7-cd17-48a9-8add-087222e99c24
+
 ![image](https://github.com/user-attachments/assets/11f8ceb8-6a8b-4e90-9fb8-b7551ede2099)
 
 ![image](https://github.com/user-attachments/assets/bce078f9-c872-48e6-848d-538a38b3c9a3)
